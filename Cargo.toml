@@ -1,0 +1,21 @@
+[package]
+name = "lwuri"
+version = "0.1.0"
+authors = ["Robert Quattlebaum <robert@voria.com>"]
+edition = "2018"
+description = "Crate for using and manipulating Uniform Resource Identifiers with a minimal memory footprint and strong typing."
+repository = "https://github.com/voria/rust-lwuri"
+documentation = "https://docs.rs/lwuri/"
+keywords = ["uri","parser","url"]
+categories = ["parser-implementations","web-programming"]
+license = "Apache-2.0"
+readme = "README.md"
+
+[features]
+default = ["std"]
+std = ["alloc"]
+alloc = []
+
+[dependencies]
+lwuri-macros = { path = "proc-macros", version = "0.1.0" }
+proc-macro-hack =  "0.5"

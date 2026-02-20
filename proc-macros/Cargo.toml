@@ -1,0 +1,20 @@
+[package]
+name = "lwuri-macros"
+version = "0.1.0"
+authors = ["Robert Quattlebaum <robert@voria.com>"]
+edition = "2018"
+description = "Crate providing proc-macros for the `lwuri` crate."
+repository = "https://github.com/vorialabs/lwuri"
+documentation = "https://docs.rs/lwuri/"
+license = "Apache-2.0"
+readme = "README.md"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = "0.15"
+quote = "0.6"
+proc-macro-hack =  "0.5"
+regex = "1.1"
+lazy_static = "1.3"
