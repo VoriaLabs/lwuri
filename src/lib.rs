@@ -156,15 +156,18 @@
 #![warn(clippy::all)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
+#[cfg(feature = "alloc")]
+extern crate alloc;
+
 pub mod escape;
 use escape::*;
 
 mod uri_ref;
 pub use uri_ref::UriRef;
 
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 mod uri_ref_buf;
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 pub use uri_ref_buf::UriRefBuf;
 
 mod uri_raw_components;
@@ -187,24 +190,22 @@ pub use any_uri_ref::UriDisplay;
 mod error;
 pub use error::{ParseError, ResolveError};
 
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 mod rel_ref_buf;
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 pub use rel_ref_buf::RelRefBuf;
 
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 mod uri_buf;
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 pub use uri_buf::UriBuf;
 
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 mod uri_unescape_buf;
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 pub use uri_unescape_buf::UriUnescapeBuf;
 
-#[cfg(feature = "std")]
 mod regexes;
-#[cfg(feature = "std")]
 pub(crate) use regexes::*;
 
 #[cfg(test)]
@@ -213,19 +214,19 @@ mod test;
 #[doc(hidden)]
 pub mod macros;
 
-#[cfg(feature = "std")]
-use std::borrow::Cow;
+#[cfg(feature = "alloc")]
+use alloc::borrow::Cow;
 
 /// Convenience type for `Cow<'a, Uri>`.
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 pub type UriCow<'a> = Cow<'a, Uri>;
 
 /// Convenience type for `Cow<'a, UriRef>`.
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 pub type UriRefCow<'a> = Cow<'a, UriRef>;
 
 /// Convenience type for `Cow<'a, RelRef>`.
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 pub type RelRefCow<'a> = Cow<'a, RelRef>;
 
 use proc_macro_hack::proc_macro_hack;
@@ -255,12 +256,12 @@ pub mod prelude {
 
     pub use {assert_rel_ref_literal, assert_uri_literal, assert_uri_ref_literal};
 
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     pub use super::{RelRefBuf, UriBuf, UriRefBuf};
 
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     pub use super::{RelRefCow, UriCow, UriRefCow};
 
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     pub use super::{rel_ref_format, uri_format, uri_ref_format};
 }

@@ -14,8 +14,11 @@
 //
 
 use super::*;
-use std::fmt;
-use std::ops::Deref;
+use core::fmt;
+use core::ops::Deref;
+
+#[cfg(feature = "alloc")]
+use alloc::string::String;
 
 /// Unsized string-slice type guaranteed to contain a well-formed [IETF-RFC3986] [relative reference].
 ///
@@ -103,8 +106,8 @@ impl Default for &mut RelRef {
     ///
     /// Despite being marked mutable, since the length is zero the value is effectively immutable.
     fn default() -> Self {
-        use std::slice::from_raw_parts_mut;
-        use std::str::from_utf8_unchecked_mut;
+        use core::slice::from_raw_parts_mut;
+        use core::str::from_utf8_unchecked_mut;
         unsafe {
             // SAFETY: An empty mutable slice with a dangling (non-null) pointer is valid.
             let empty_slice = from_raw_parts_mut(core::ptr::NonNull::<u8>::dangling().as_ptr(), 0);
@@ -190,12 +193,14 @@ impl RelRef {
     }
 
     /// Constructs a new `RelRefBuf` from a `&RelRef`, disambiguating if degenerate.
+    #[cfg(feature = "alloc")]
     #[inline(always)]
     pub fn to_rel_ref_buf(&self) -> RelRefBuf {
         RelRefBuf::from_rel_ref(self)
     }
 
     /// Constructs a new `UriRefBuf` from a `&RelRef`, disambiguating if degenerate.
+    #[cfg(feature = "alloc")]
     pub fn to_uri_ref_buf(&self) -> UriRefBuf {
         self.to_rel_ref_buf().into()
     }
@@ -219,7 +224,7 @@ impl RelRef {
     /// Returns a [`Cow<UriRef>`] that usually just contains a reference to
     /// this slice, but will contain an owned instance if this relative reference
     /// [is degenerate][RelRef::is_degenerate].
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     pub fn as_uri_ref(&self) -> Cow<'_, UriRef> {
         if let Some(uri_ref) = self.try_as_uri_ref() {
             Cow::Borrowed(uri_ref)
@@ -298,28 +303,28 @@ impl RelRef {
 
     /// See [`UriRef::fragment`] for more information.
     #[must_use]
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     #[inline(always)]
     pub fn fragment(&self) -> Option<Cow<'_, str>> {
         self.0.fragment()
     }
 
     /// See [`UriRef::path_segments`] for more information.
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     #[inline(always)]
     pub fn path_segments(&self) -> impl Iterator<Item = Cow<'_, str>> {
         self.0.path_segments()
     }
 
     /// See [`UriRef::query_items`] for more information.
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     #[inline(always)]
     pub fn query_items(&self) -> impl Iterator<Item = Cow<'_, str>> {
         self.0.query_items()
     }
 
     /// See [`UriRef::query_key_values`] for more information.
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     #[inline(always)]
     pub fn query_key_values(&self) -> impl Iterator<Item = (Cow<'_, str>, Cow<'_, str>)> {
         self.0.query_key_values()
@@ -363,7 +368,7 @@ impl RelRef {
 impl RelRef {
     /// Resolves a relative URI against this relative URI, yielding a
     /// new relative URI as a `RelRefBuf`.
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     #[must_use]
     pub fn resolved_rel_ref<UF: AsRef<RelRef>>(&self, dest: UF) -> RelRefBuf {
         let mut ret = String::with_capacity(self.len() + dest.as_ref().len());
@@ -615,7 +620,7 @@ impl RelRef {
         let mut_bytes = path.as_mut_str().as_bytes_mut();
 
         let mut ret = mut_bytes.split_mut(|b| *b == b'/').filter_map(|seg| {
-            let seg = std::str::from_utf8_unchecked_mut(seg);
+            let seg = core::str::from_utf8_unchecked_mut(seg);
             if seg == "." {
                 None
             } else {
@@ -655,7 +660,7 @@ impl RelRef {
         let mut ret = mut_bytes
             .split_mut(|b| *b == b'&' || *b == b';')
             .map(|seg| {
-                let seg = std::str::from_utf8_unchecked_mut(seg);
+                let seg = core::str::from_utf8_unchecked_mut(seg);
                 &*seg.unescape_uri_in_place()
             });
 
@@ -671,6 +676,8 @@ impl RelRef {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(feature = "alloc")]
+    use alloc::{vec, vec::Vec, string::ToString};
 
     #[test]
     fn path() {

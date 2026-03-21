@@ -14,7 +14,9 @@
 //
 
 use super::*;
-use std::ops::Deref;
+use core::ops::Deref;
+
+use alloc::string::{String, ToString};
 
 /// Sized, heap-allocated string type guaranteed to contain a well-formed [IETF-RFC3986]
 /// [relative-reference].

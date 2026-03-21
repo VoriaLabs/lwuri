@@ -14,10 +14,12 @@
 //
 
 use super::*;
-use std::convert::TryFrom;
-use std::fmt::Write;
-use std::ops::Deref;
-use std::str::FromStr;
+use core::convert::TryFrom;
+use core::fmt::Write;
+use core::ops::Deref;
+use core::str::FromStr;
+
+use alloc::string::{String, ToString};
 
 /// Sized, heap-allocated string type guaranteed to contain a well-formed [IETF-RFC3986] URI
 /// or [network path](enum.UriType.html#variant.NetworkPath).
@@ -86,8 +88,8 @@ impl<'a> TryFrom<&'a String> for UriBuf {
     }
 }
 
-impl std::fmt::Display for UriBuf {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+impl core::fmt::Display for UriBuf {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         self.write_to(f)
     }
 }

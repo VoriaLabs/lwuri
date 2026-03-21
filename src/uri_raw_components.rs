@@ -18,6 +18,9 @@ use super::*;
 use core::fmt;
 use core::str::FromStr;
 
+#[cfg(feature = "alloc")]
+use alloc::string::{String, ToString};
+
 /// Struct that holds parsed URI components.
 ///
 /// Internally, all components are referenced in raw/escaped form,
@@ -117,14 +120,14 @@ impl fmt::Display for UriRawComponents<'_> {
     }
 }
 
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 impl From<UriRawComponents<'_>> for String {
     fn from(comp: UriRawComponents<'_>) -> Self {
         String::from(&comp)
     }
 }
 
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 impl From<&UriRawComponents<'_>> for String {
     fn from(comp: &UriRawComponents<'_>) -> Self {
         comp.to_string()
@@ -285,42 +288,42 @@ impl<'a> UriRawComponents<'a> {
 
     /// Unescaped (percent-decoded) version of [`UriRawComponents::raw_fragment`], using
     /// `std::borrow::Cow<str>` instead of `&str`.
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     pub fn fragment(&self) -> Option<Cow<'_, str>> {
         self.raw_fragment().map(|f| f.unescape_uri().to_cow())
     }
 
     /// Unescaped (percent-decoded) version of [`UriRawComponents::raw_host`], using
     /// `std::borrow::Cow<str>` instead of `&str`.
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     pub fn host(&self) -> Option<Cow<'_, str>> {
         self.raw_host().map(|f| f.unescape_uri().to_cow())
     }
 
     /// Unescaped (percent-decoded) version of [`UriRawComponents::raw_authority`], using
     /// `std::borrow::Cow<str>` instead of `&str`.
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     pub fn authority(&self) -> Option<Cow<'_, str>> {
         self.raw_authority().map(|f| f.unescape_uri().to_cow())
     }
 
     /// Unescaped (percent-decoded) version of [`UriRawComponents::raw_userinfo`], using
     /// `std::borrow::Cow<str>` instead of `&str`.
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     pub fn userinfo(&self) -> Option<Cow<'_, str>> {
         self.raw_userinfo().map(|f| f.unescape_uri().to_cow())
     }
 
     /// Unescaped (percent-decoded) version of [`UriRawComponents::raw_query`], using
     /// `std::borrow::Cow<str>` instead of `&str`.
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     pub fn query(&self) -> Option<Cow<'_, str>> {
         self.raw_query().map(|f| f.unescape_uri().to_cow())
     }
 
     /// Unescaped (percent-decoded) version of [`UriRawComponents::raw_path_segments`], using
     /// `std::borrow::Cow<str>` instead of `&str`.
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     pub fn path_segments(&self) -> impl Iterator<Item = Cow<'_, str>> {
         self.raw_path_segments()
             .map(|item| item.unescape_uri().to_cow())
@@ -328,7 +331,7 @@ impl<'a> UriRawComponents<'a> {
 
     /// Unescaped (percent-decoded) version of [`UriRawComponents::raw_query_items`], using
     /// `std::borrow::Cow<str>` instead of `&str`.
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     pub fn query_items(&self) -> impl Iterator<Item = Cow<'_, str>> {
         self.raw_query_items()
             .map(|item| item.unescape_uri().to_cow())
@@ -336,7 +339,7 @@ impl<'a> UriRawComponents<'a> {
 
     /// Unescaped (percent-decoded) version of [`UriRawComponents::raw_query_key_values`], using
     /// `std::borrow::Cow<str>` instead of `&str`.
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     pub fn query_key_values(&self) -> impl Iterator<Item = (Cow<'_, str>, Cow<'_, str>)> {
         self.raw_query_key_values().map(|item| {
             (
@@ -426,6 +429,8 @@ impl<'a> UriRawComponents<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(feature = "alloc")]
+    use alloc::{vec, vec::Vec, string::ToString};
 
     #[test]
     fn components() {

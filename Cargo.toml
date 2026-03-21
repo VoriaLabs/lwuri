@@ -1,6 +1,6 @@
 [package]
 name = "lwuri"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Robert Quattlebaum <robert@voria.com>"]
 edition = "2018"
 description = "Crate for using and manipulating Uniform Resource Identifiers with a minimal memory footprint and strong typing."
@@ -17,5 +17,6 @@ std = ["alloc"]
 alloc = []
 
 [dependencies]
-lwuri-macros = { path = "proc-macros", version = "0.1.0" }
+lwuri-macros = { path = "proc-macros", version = "0.1.1" }
 proc-macro-hack =  "0.5"
+heapless = "0.8"

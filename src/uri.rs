@@ -14,7 +14,10 @@
 //
 
 use super::*;
-use std::ops::Deref;
+use core::ops::Deref;
+
+#[cfg(feature = "alloc")]
+use alloc::string::ToString;
 
 /// Unsized string-slice type guaranteed to contain a well-formed [IETF-RFC3986] URI
 /// *or* [network path](index.html#network-path-support).
@@ -95,8 +98,8 @@ impl AnyUriRef for Uri {
     }
 }
 
-impl std::fmt::Display for Uri {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+impl core::fmt::Display for Uri {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         self.write_to(f)
     }
 }
@@ -164,6 +167,7 @@ impl Uri {
     }
 
     /// Copy the content of this [`&Uri`][Uri] into a new [`UriBuf`] and return it.
+    #[cfg(feature = "alloc")]
     pub fn to_uri_buf(&self) -> UriBuf {
         unsafe { UriBuf::from_string_unchecked(self.to_string()) }
     }

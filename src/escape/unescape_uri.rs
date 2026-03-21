@@ -14,15 +14,18 @@
 //
 
 use core::char::REPLACEMENT_CHARACTER;
-use core::convert::TryInto;
 use core::fmt;
 use core::fmt::Display;
 use core::fmt::Write;
 use core::iter::FusedIterator;
 use core::str::{from_utf8, from_utf8_unchecked};
 
-#[cfg(feature = "std")]
-use std::borrow::Cow;
+#[cfg(feature = "alloc")]
+use alloc::borrow::Cow;
+#[cfg(feature = "alloc")]
+use alloc::string::{String, ToString};
+#[cfg(feature = "alloc")]
+use core::convert::TryInto;
 
 /// Used for determining how long a given UTF8 sequence is.
 /// Table values come from https://tools.ietf.org/html/rfc3629
@@ -72,7 +75,7 @@ impl<'a> Display for UnescapeUri<'a> {
     }
 }
 
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 impl<'a> From<UnescapeUri<'a>> for Cow<'a, str> {
     fn from(iter: UnescapeUri<'a>) -> Self {
         iter.to_cow()
@@ -119,7 +122,7 @@ impl<'a> UnescapeUri<'a> {
     }
 
     /// Decodes the string (lossily if necessary), returning it as a copy-on-write type.
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     pub fn to_cow(&self) -> Cow<'a, str> {
         let as_str = self.iter.as_str();
         if as_str
@@ -139,7 +142,7 @@ impl<'a> UnescapeUri<'a> {
     /// If the string cannot be decoded losslessly, then a [`UnescapeError`] is
     /// returned, from which the location of the decoding error can be obtained
     /// with [`UnescapeError::index`].
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     pub fn try_to_cow(&self) -> Result<Cow<'a, str>, UnescapeError> {
         let as_str = self.iter.as_str();
         if as_str
@@ -158,7 +161,7 @@ impl<'a> UnescapeUri<'a> {
     /// error is returned as an `Err`.
     ///
     /// [`String`]: std::string::String
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     pub fn try_to_string(&self) -> Result<String, UnescapeError> {
         self.clone().try_into()
     }
@@ -202,7 +205,7 @@ impl<'a> UnescapeUri<'a> {
     }
 }
 
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 impl<'a> TryInto<String> for UnescapeUri<'a> {
     type Error = UnescapeError;
 

@@ -24,6 +24,7 @@ use core::ops::Range;
 /// [`AnyUriRef::write_resolved`]: lwuri::AnyUriRef::write_resolved
 /// [`AnyUriRef::resolved`]: lwuri::AnyUriRef::resolved
 #[derive(Debug, Eq, PartialEq, Hash, Clone, Copy)]
+#[non_exhaustive]
 pub enum ResolveError {
     /// The URI-reference being given as a base cannot be used as a base for the given
     /// target URI-reference.
@@ -31,6 +32,12 @@ pub enum ResolveError {
 
     /// Unable to write to the given [`core::fmt::Write`] instance.
     WriteFailure,
+
+    /// The resolved path has too many segments to fit in the fixed-capacity buffer.
+    ///
+    /// This occurs when the combined base and target paths exceed 64 segments after
+    /// dot-segment resolution.
+    PathTooLong,
 }
 
 impl fmt::Display for ResolveError {
@@ -41,6 +48,10 @@ impl fmt::Display for ResolveError {
                 "given uri-ref cannot be used as a base for the target uri-ref"
             ),
             Self::WriteFailure => write!(f, "unable to write to the given `fmt::Write` instance"),
+            Self::PathTooLong => write!(
+                f,
+                "resolved path exceeds maximum segment capacity (64 segments)"
+            ),
         }
     }
 }

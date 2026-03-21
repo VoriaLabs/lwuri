@@ -17,6 +17,9 @@ use super::*;
 
 use crate::*;
 
+#[cfg(feature = "alloc")]
+use alloc::string::ToString;
+
 #[test]
 fn escaped_path_starts_with_1() {
     let s = "bl%C3%A5b%C3%A6r/%2F/syltet%C3%B8y/and/on/and/on";

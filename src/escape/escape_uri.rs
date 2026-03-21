@@ -16,10 +16,12 @@
 use core::fmt::Display;
 use core::fmt::Write;
 use core::iter::FusedIterator;
+#[cfg(feature = "alloc")]
+use alloc::borrow::Cow;
+#[cfg(feature = "alloc")]
 use core::str::from_utf8_unchecked;
-
-#[cfg(feature = "std")]
-use std::borrow::Cow;
+#[cfg(feature = "alloc")]
+use alloc::string::ToString;
 
 fn is_char_uri_unreserved(c: char) -> bool {
     c.is_ascii_alphanumeric() || c == '-' || c == '.' || c == '_' || c == '~'
@@ -154,7 +156,7 @@ pub struct EscapeUri<'a, X: NeedsEscape = EscapeUriSegment> {
     pub(super) _needs_escape: X,
 }
 
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 impl<'a, X: NeedsEscape> From<EscapeUri<'a, X>> for Cow<'a, str> {
     fn from(iter: EscapeUri<'a, X>) -> Self {
         iter.to_cow()
@@ -174,7 +176,7 @@ impl<'a, X: NeedsEscape> EscapeUri<'a, X> {
     }
 
     /// Converts this iterator into a [`std::borrow::Cow<str>`].
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     pub fn to_cow(&self) -> Cow<'a, str> {
         if self.is_needed() {
             Cow::from(self.to_string())

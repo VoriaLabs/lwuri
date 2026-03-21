@@ -17,8 +17,8 @@ use super::*;
 use core::ops::{Deref, Range};
 use core::str::FromStr;
 
-#[cfg(feature = "std")]
-use std::borrow::Cow;
+#[cfg(feature = "alloc")]
+use alloc::borrow::Cow;
 
 /// Unsized string-slice type guaranteed to contain a well-formed [IETF-RFC3986] [URI-reference].
 ///
@@ -101,8 +101,8 @@ impl Default for &UriRef {
 /// is empty it is mutable in name only.
 impl Default for &mut UriRef {
     fn default() -> Self {
-        use std::slice::from_raw_parts_mut;
-        use std::str::from_utf8_unchecked_mut;
+        use core::slice::from_raw_parts_mut;
+        use core::str::from_utf8_unchecked_mut;
         unsafe {
             // SAFETY: An empty mutable slice with a dangling (non-null) pointer is valid.
             let empty_slice = from_raw_parts_mut(core::ptr::NonNull::<u8>::dangling().as_ptr(), 0);
@@ -160,8 +160,8 @@ impl AnyUriRef for UriRef {
     }
 }
 
-impl std::fmt::Display for UriRef {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+impl core::fmt::Display for UriRef {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         self.write_to(f)
     }
 }
@@ -417,7 +417,7 @@ impl UriRef {
     }
 
     /// Percent-decoded version of [`UriRef::raw_authority`], using `std::borrow::Cow<str>` instead of `&str`.
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     pub fn authority(&self) -> Option<Cow<'_, str>> {
         self.raw_authority().map(|f| f.unescape_uri().to_cow())
     }
@@ -468,7 +468,7 @@ impl UriRef {
 
     /// Percent-decoded version of [`UriRef::raw_userinfo_host_port`], where the unescaped parts are
     /// represented as `std::borrow::Cow<str>` instances.
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     pub fn userinfo_host_port(&self) -> Option<(Option<Cow<'_, str>>, Cow<'_, str>, Option<u16>)> {
         self.raw_userinfo_host_port().map(|item| {
             (
@@ -480,7 +480,7 @@ impl UriRef {
     }
 
     /// Percent-decoded *host* as a `std::borrow::Cow<str>`, if present.
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     pub fn host(&self) -> Option<Cow<'_, str>> {
         self.raw_userinfo_host_port()
             .map(|item| item.1.unescape_uri().to_cow())
@@ -567,7 +567,7 @@ impl UriRef {
     /// assert_eq!(iter.next(), Some(Cow::from("blåbær")));
     /// assert_eq!(iter.next(), None);
     /// ```
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     pub fn path_segments(&self) -> impl Iterator<Item = Cow<'_, str>> {
         self.raw_path_segments()
             .map(|item| item.unescape_uri().to_cow())
@@ -671,7 +671,7 @@ impl UriRef {
     }
 
     /// Percent-decoded version of [`UriRef::raw_query_items`], using `std::borrow::Cow<str>` instead of `&str`.
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     pub fn query_items(&self) -> impl Iterator<Item = Cow<'_, str>> {
         self.raw_query_items()
             .map(|item| item.unescape_uri().to_cow())
@@ -702,7 +702,7 @@ impl UriRef {
     /// assert_eq!(iter.next(), Some((Cow::from("c"), Cow::from("blåbær"))));
     /// assert_eq!(iter.next(), None);
     /// ```
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     pub fn query_key_values(&self) -> impl Iterator<Item = (Cow<'_, str>, Cow<'_, str>)> {
         self.raw_query_key_values().map(|item| {
             (
@@ -733,7 +733,7 @@ impl UriRef {
     }
 
     /// Percent-decoded version of [`UriRef::raw_fragment`], using `std::borrow::Cow<str>` instead of `&str`.
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     pub fn fragment(&self) -> Option<Cow<'_, str>> {
         self.raw_fragment().map(|f| f.unescape_uri().to_cow())
     }
@@ -1007,6 +1007,8 @@ impl UriRef {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(feature = "alloc")]
+    use alloc::{vec, vec::Vec, string::ToString};
 
     #[test]
     fn test_from_str() {

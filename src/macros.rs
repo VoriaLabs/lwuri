@@ -17,6 +17,7 @@
 
 pub use super::{impl_uri_buf_traits, impl_uri_traits};
 pub use super::{rel_ref, uri, uri_ref};
+#[cfg(feature = "alloc")]
 pub use super::{rel_ref_format, uri_format, uri_ref_format};
 
 // Internal macros.
@@ -269,28 +270,28 @@ macro_rules! iuri {
 /// Creates a `Option<UriRefBuf>` from the given string format and arguments.
 ///
 /// The resulting string is checked at runtime to ensure it is well-formed.
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 #[macro_export]
 macro_rules! uri_ref_format {
-    ($($arg:tt)*) => ($crate::UriRefBuf::from_string(::std::format!($($arg)*)))
+    ($($arg:tt)*) => ($crate::UriRefBuf::from_string(::alloc::format!($($arg)*)))
 }
 
 /// Creates a `Option<UriBuf>` from the given string format and arguments.
 ///
 /// The resulting string is checked at runtime to ensure it is well-formed.
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 #[macro_export]
 macro_rules! uri_format {
-    ($($arg:tt)*) => ($crate::UriBuf::from_string(::std::format!($($arg)*)))
+    ($($arg:tt)*) => ($crate::UriBuf::from_string(::alloc::format!($($arg)*)))
 }
 
 /// Creates a `Option<RelRefBuf>` from the given string format and arguments.
 ///
 /// The resulting string is checked at runtime to ensure it is well-formed.
-#[cfg(feature = "std")]
+#[cfg(feature = "alloc")]
 #[macro_export]
 macro_rules! rel_ref_format {
-    ($($arg:tt)*) => ($crate::RelRefBuf::from_string(::std::format!($($arg)*)))
+    ($($arg:tt)*) => ($crate::RelRefBuf::from_string(::alloc::format!($($arg)*)))
 }
 
 #[doc(hidden)]
@@ -345,18 +346,18 @@ macro_rules! _impl_uri_traits_base {
     ( $C:ty ) => {
         _impl_uri_traits!($C);
 
-        #[cfg(feature = "std")]
-        impl ::core::convert::From<&$C> for ::std::string::String {
+        #[cfg(feature = "alloc")]
+        impl ::core::convert::From<&$C> for ::alloc::string::String {
             fn from(x: &$C) -> Self {
-                ::std::string::String::from(&x.0)
+                ::alloc::string::String::from(&x.0)
             }
         }
 
-        #[cfg(feature = "std")]
+        #[cfg(feature = "alloc")]
         impl ::core::convert::From<&$C> for $crate::UriRefBuf {
             fn from(x: &$C) -> Self {
                 unsafe {
-                    $crate::UriRefBuf::from_string_unchecked(::std::string::String::from(&x.0))
+                    $crate::UriRefBuf::from_string_unchecked(::alloc::string::String::from(&x.0))
                 }
             }
         }
@@ -382,7 +383,7 @@ macro_rules! impl_uri_traits {
                 self.0.uri_type()
             }
 
-            #[cfg(feature = "std")]
+            #[cfg(feature = "alloc")]
             fn to_uri_ref_buf(&self) -> $crate::UriRefBuf {
                 self.0.to_uri_ref_buf()
             }
@@ -403,10 +404,10 @@ macro_rules! _impl_uri_buf_traits_base {
     ( $C:ty , $B:ty ) => {
         _impl_uri_traits!($C);
 
-        #[cfg(feature = "std")]
-        impl ::core::convert::From<$C> for ::std::string::String {
+        #[cfg(feature = "alloc")]
+        impl ::core::convert::From<$C> for ::alloc::string::String {
             fn from(x: $C) -> Self {
-                ::std::string::String::from(x.0)
+                ::alloc::string::String::from(x.0)
             }
         }
 
@@ -416,13 +417,13 @@ macro_rules! _impl_uri_buf_traits_base {
             }
         }
 
-        #[cfg(feature = "std")]
-        impl ::std::borrow::ToOwned for $B {
+        #[cfg(feature = "alloc")]
+        impl ::alloc::borrow::ToOwned for $B {
             type Owned = $C;
 
             fn to_owned(&self) -> Self::Owned {
                 unsafe {
-                    <$C>::from_string_unchecked(<Self as ::std::string::ToString>::to_string(self))
+                    <$C>::from_string_unchecked(<Self as ::alloc::string::ToString>::to_string(self))
                 }
             }
         }
@@ -471,21 +472,21 @@ macro_rules! impl_uri_buf_traits {
     ( $C:ty , $B:ty) => {
         _impl_uri_buf_traits_base!($C, $B);
 
-        #[cfg(feature = "std")]
-        impl ::core::convert::AsRef<::std::string::String> for $C {
-            fn as_ref(&self) -> &std::string::String {
-                ::core::convert::AsRef::<::std::string::String>::as_ref(&self.0)
+        #[cfg(feature = "alloc")]
+        impl ::core::convert::AsRef<::alloc::string::String> for $C {
+            fn as_ref(&self) -> &::alloc::string::String {
+                ::core::convert::AsRef::<::alloc::string::String>::as_ref(&self.0)
             }
         }
 
-        #[cfg(feature = "std")]
+        #[cfg(feature = "alloc")]
         impl ::core::convert::AsRef<$crate::UriRefBuf> for $C {
             fn as_ref(&self) -> &$crate::UriRefBuf {
                 ::core::convert::AsRef::<$crate::UriRefBuf>::as_ref(&self.0)
             }
         }
 
-        #[cfg(feature = "std")]
+        #[cfg(feature = "alloc")]
         impl ::core::convert::From<$C> for $crate::UriRefBuf {
             fn from(x: $C) -> Self {
                 ::core::convert::Into::<Self>::into(x.0)

@@ -15,7 +15,11 @@
 
 use super::*;
 use core::fmt::Display;
+
+#[cfg(feature = "alloc")]
 use core::ops::Deref;
+#[cfg(feature = "alloc")]
+use alloc::string::{String, ToString};
 
 /// Trait for objects that represent logical URI-references. Useful for generic programming.
 ///
@@ -46,7 +50,7 @@ pub trait AnyUriRef {
     ///
     /// The default implementation uses [`AnyUriRef::write_to_unsafe`] to render out
     /// the content of the URI-reference.
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     #[must_use]
     fn to_uri_ref_buf(&self) -> UriRefBuf {
         unsafe { UriRefBuf::from_string_unchecked(self.display().to_string()) }
@@ -137,10 +141,6 @@ pub trait AnyUriRefExt: AnyUriRef {
         target: &D,
         f: &mut T,
     ) -> Result<(), ResolveError> {
-        // This implementation is kind of a mess, but it does work and it does
-        // pass the rather large corpus of unit tests. It eventually needs to be
-        // rewritten to avoid memory allocation.
-        // TODO(#9): Rewrite `AnyUriRef::write_resolved` to not use any memory allocation.
 
         if target.is_empty() {
             self.write_to(f)?;
@@ -219,7 +219,7 @@ pub trait AnyUriRefExt: AnyUriRef {
                 base_path = base_path.trim_resource();
             }
 
-            let mut out_path_vec = Vec::new();
+            let mut out_path_vec = heapless::Vec::<&str, 64>::new();
 
             let seg_iter = base_path
                 .raw_path_segments()
@@ -235,7 +235,7 @@ pub trait AnyUriRefExt: AnyUriRef {
                         let last = out_path_vec.last().copied();
 
                         if last.map(str::is_empty) == Some(false) {
-                            out_path_vec.push("");
+                            out_path_vec.push("").map_err(|_| ResolveError::PathTooLong)?;
                         }
                         continue;
                     }
@@ -247,14 +247,22 @@ pub trait AnyUriRefExt: AnyUriRef {
                         }
 
                         match (last, path_will_be_absolute, out_path_vec.is_empty()) {
-                            (Some("."), false, _) => out_path_vec.push(".."),
-                            (Some(".."), false, _) => {
-                                out_path_vec.push("..");
-                                out_path_vec.push("..");
+                            (Some("."), false, _) => {
+                                out_path_vec.push("..").map_err(|_| ResolveError::PathTooLong)?;
                             }
-                            (Some(_), true, _) => out_path_vec.push(""),
-                            (Some(_), false, false) => out_path_vec.push(""),
-                            (Some(_), false, true) => out_path_vec.push("."),
+                            (Some(".."), false, _) => {
+                                out_path_vec.push("..").map_err(|_| ResolveError::PathTooLong)?;
+                                out_path_vec.push("..").map_err(|_| ResolveError::PathTooLong)?;
+                            }
+                            (Some(_), true, _) => {
+                                out_path_vec.push("").map_err(|_| ResolveError::PathTooLong)?;
+                            }
+                            (Some(_), false, false) => {
+                                out_path_vec.push("").map_err(|_| ResolveError::PathTooLong)?;
+                            }
+                            (Some(_), false, true) => {
+                                out_path_vec.push(".").map_err(|_| ResolveError::PathTooLong)?;
+                            }
                             (None, _, _) => (),
                         };
                     }
@@ -266,7 +274,7 @@ pub trait AnyUriRefExt: AnyUriRef {
                             }
                             _ => (),
                         };
-                        out_path_vec.push(seg)
+                        out_path_vec.push(seg).map_err(|_| ResolveError::PathTooLong)?;
                     }
                 }
             }
@@ -298,7 +306,7 @@ pub trait AnyUriRefExt: AnyUriRef {
 
     /// Creates a new [`UriRefBuf`] that contains the result of performing URI resolution with
     /// `dest`.
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     fn resolved<T: AnyUriRef + ?Sized>(&self, dest: &T) -> Result<UriRefBuf, ResolveError> {
         if dest.is_empty() {
             return Ok(self.to_uri_ref_buf());
@@ -317,6 +325,7 @@ pub trait AnyUriRefExt: AnyUriRef {
 impl<T: AnyUriRef + ?Sized> AnyUriRefExt for T {}
 
 /// Blanket implementation for Copy-On-Write types.
+#[cfg(feature = "alloc")]
 impl<'a, T: AnyUriRef + Clone + ?Sized> AnyUriRef for Cow<'a, T> {
     fn components(&self) -> UriRawComponents<'_> {
         self.deref().components()
@@ -330,7 +339,7 @@ impl<'a, T: AnyUriRef + Clone + ?Sized> AnyUriRef for Cow<'a, T> {
         self.deref().uri_type()
     }
 
-    #[cfg(feature = "std")]
+    #[cfg(feature = "alloc")]
     fn to_uri_ref_buf(&self) -> UriRefBuf {
         self.deref().to_uri_ref_buf()
     }
@@ -359,6 +368,8 @@ impl<'a, T: AnyUriRef + ?Sized> Display for UriDisplay<'a, T> {
 #[cfg(test)]
 mod test {
     use super::*;
+    #[cfg(feature = "alloc")]
+    use alloc::{vec, vec::Vec, string::ToString, borrow::ToOwned};
 
     #[test]
     fn resolve_simple() {
