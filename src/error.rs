@@ -100,7 +100,14 @@ impl fmt::Display for ParseError {
     }
 }
 
-impl ::core::error::Error for ParseError {}
+impl ::core::error::Error for ParseError {
+    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
+        match &self.desc {
+            ParseErrorKind::EncodingError(e) => Some(e),
+            _ => None,
+        }
+    }
+}
 
 impl From<crate::escape::UnescapeError> for ParseError {
     fn from(error: crate::escape::UnescapeError) -> Self {

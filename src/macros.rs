@@ -29,16 +29,7 @@ pub use super::{_impl_uri_buf_traits_base, _impl_uri_traits, _impl_uri_traits_ba
 macro_rules! _uri_const {
     ( $S:expr, $C:ty ) => {{
         const __CONST_S: &'static str = $S;
-        // We do this weird casting thing here to make sure that we
-        // don't end up using unstable features, while still allowing
-        // these macros to be used to assign constants.
-        unsafe {
-            union Slices<'a> {
-                str: &'a str,
-                uri: &'a $C,
-            }
-            Slices { str: __CONST_S }.uri
-        }
+        unsafe { ::core::mem::transmute::<&str, &$C>(__CONST_S) }
     }};
 }
 
@@ -84,22 +75,6 @@ macro_rules! uri_ref {
     }};
     ( $S:expr ) => {{
         $crate::assert_uri_ref_literal!($S);
-        $crate::_uri_const!($S, $crate::UriRef)
-    }};
-    ( ) => {
-        $crate::uri_ref!("")
-    };
-}
-
-#[doc(hidden)]
-#[macro_export]
-macro_rules! iuri_ref {
-    ( unsafe $S:expr ) => {{
-        // We don't do any correctness checks when $S is preceded by `unsafe`.
-        $crate::_uri_const!($S, $crate::UriRef)
-    }};
-    ( $S:expr ) => {{
-        assert_uri_ref_literal!($S);
         $crate::_uri_const!($S, $crate::UriRef)
     }};
     ( ) => {
@@ -182,22 +157,6 @@ macro_rules! rel_ref {
     };
 }
 
-#[doc(hidden)]
-#[macro_export]
-macro_rules! irel_ref {
-    ( unsafe $S:expr ) => {{
-        // We don't do any correctness checks when $S is preceded by `unsafe`.
-        $crate::_uri_const!($S, $crate::RelRef)
-    }};
-    ( $S:expr ) => {{
-        assert_rel_ref_literal!($S);
-        $crate::_uri_const!($S, $crate::RelRef)
-    }};
-    ( ) => {
-        $crate::rel_ref!("")
-    };
-}
-
 /// Creates a `&'static Uri` from a string literal.
 ///
 /// Accepts only string constants and literals. The given string *MUST* be well-formed.
@@ -236,30 +195,6 @@ macro_rules! uri {
     }};
     ( $S:expr ) => {{
         $crate::assert_uri_literal!($S);
-        $crate::_uri_const!($S, $crate::Uri)
-    }};
-    ( ) => {
-        $crate::uri!("")
-    };
-}
-
-#[doc(hidden)]
-// This macro should be used by `lwuri` and the uri macro is used for downstream crates.
-//
-// This prevents prevents the error:
-// > macro-expanded `macro_export` macros from the current
-// > crate cannot be referred to by absolute paths
-//
-// and allows downstream crates to use the uri macro without having to import
-// the `assert_uri_literal` macro.
-#[macro_export]
-macro_rules! iuri {
-    ( unsafe $S:expr ) => {{
-        // We don't do any correctness checks when $S is preceded by `unsafe`.
-        $crate::_uri_const!($S, $crate::Uri)
-    }};
-    ( $S:expr ) => {{
-        assert_uri_literal!($S);
         $crate::_uri_const!($S, $crate::Uri)
     }};
     ( ) => {
@@ -431,6 +366,12 @@ macro_rules! _impl_uri_buf_traits_base {
         impl ::core::borrow::Borrow<$B> for $C {
             fn borrow(&self) -> &$B {
                 unsafe { <$B>::from_str_unchecked(self.as_str()) }
+            }
+        }
+
+        impl ::core::borrow::Borrow<str> for $C {
+            fn borrow(&self) -> &str {
+                self.as_str()
             }
         }
 

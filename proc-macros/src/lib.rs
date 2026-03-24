@@ -19,50 +19,51 @@
 
 #![doc(html_no_source)]
 
-extern crate proc_macro;
-
-#[macro_use]
-extern crate lazy_static;
-
-use crate::proc_macro::TokenStream;
-use proc_macro_hack::proc_macro_hack;
+use proc_macro::TokenStream;
 use quote::quote;
 use regex::Regex;
-use syn;
+use std::sync::LazyLock;
 
 mod unescape_uri;
 use unescape_uri::UnescapeUri;
 
-lazy_static! {
-    // Splits full URI string into "scheme", "heir-part", "query", and "fragment"
-    //      scheme    = $2
-    //      authority = $4
-    //      path      = $5
-    //      query     = $7
-    //      fragment  = $9
-    //
-    // One difference from the regex given in RFC3986 is that this one
-    // prohibits the '%' character from appearing in the scheme, which is illegal.
-    pub(crate) static ref RFC3986_APPENDIX_B: Regex = Regex::new(r#"^(([^:/?#%]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?$"#)
-        .expect("RFC3986_APPENDIX_B");
+// Splits full URI string into "scheme", "heir-part", "query", and "fragment"
+//      scheme    = $2
+//      authority = $4
+//      path      = $5
+//      query     = $7
+//      fragment  = $9
+//
+// One difference from the regex given in RFC3986 is that this one
+// prohibits the '%' character from appearing in the scheme, which is illegal.
+static RFC3986_APPENDIX_B: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r#"^(([^:/?#%]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?$"#)
+        .expect("RFC3986_APPENDIX_B")
+});
 
-    //  * `http://example.com/test/path?query#fragment`
-    //      * $1 = `http://example.com`
-    //      * $2 = `http:`
-    //      * $3 = `//example.com`
-    //      * $4 = `/test/path?query#fragment`
-    //      * $5 = `/test/path?query`
-    //      * $6 = `#fragment`
-    pub(crate) static ref URI_AUTHORITY_VS_REST: Regex = Regex::new(r#"^(([^:/?#]+:)(//[^/?#]*)?)?(([^#]*)(#.*)?)$"#)
-        .expect("URI_AUTHORITY_VS_REST");
+//  * `http://example.com/test/path?query#fragment`
+//      * $1 = `http://example.com`
+//      * $2 = `http:`
+//      * $3 = `//example.com`
+//      * $4 = `/test/path?query#fragment`
+//      * $5 = `/test/path?query`
+//      * $6 = `#fragment`
+#[allow(dead_code)]
+static URI_AUTHORITY_VS_REST: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r#"^(([^:/?#]+:)(//[^/?#]*)?)?(([^#]*)(#.*)?)$"#)
+        .expect("URI_AUTHORITY_VS_REST")
+});
 
-    pub(crate) static ref URI_CHECK_SCHEME: Regex = Regex::new(r#"^[A-Za-z][-+.A-Za-z0-9]*$"#)
-        .expect("URI_CHECK_SCHEME");
+static URI_CHECK_SCHEME: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r#"^[A-Za-z][-+.A-Za-z0-9]*$"#).expect("URI_CHECK_SCHEME")
+});
 
-    // Splits the authority into "userinfo", "host", and "port"
-    pub(crate) static ref URI_AUTHORITY: Regex = Regex::new(r#"^(([^@/?#]+)@)?([^\[\]:]+|\[[^\]]+\])(:([0-9]+))?$"#)
-        .expect("URI_AUTHORITY");
-}
+// Splits the authority into "userinfo", "host", and "port"
+#[allow(dead_code)]
+static URI_AUTHORITY: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r#"^(([^@/?#]+)@)?([^\[\]:]+|\[[^\]]+\])(:([0-9]+))?$"#)
+        .expect("URI_AUTHORITY")
+});
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 enum Error {
@@ -129,16 +130,14 @@ fn assert_uri_ref_str(uri_str: &str) -> Result<(), Error> {
 }
 
 fn string_literal_from_token_stream(input: TokenStream) -> String {
-    use syn::LitStr;
-
-    if let Some(nom) = syn::parse::<LitStr>(input.clone()).ok() {
-        return nom.value();
+    if let Ok(lit) = syn::parse::<syn::LitStr>(input.clone()) {
+        return lit.value();
     }
 
     panic!("Expected string literal, got {:?}", input);
 }
 
-#[proc_macro_hack]
+#[proc_macro]
 pub fn assert_uri_literal(input: TokenStream) -> TokenStream {
     let uri_str = string_literal_from_token_stream(input);
 
@@ -154,7 +153,7 @@ pub fn assert_uri_literal(input: TokenStream) -> TokenStream {
     gen.into()
 }
 
-#[proc_macro_hack]
+#[proc_macro]
 pub fn assert_rel_ref_literal(input: TokenStream) -> TokenStream {
     let uri_str = string_literal_from_token_stream(input);
 
@@ -170,7 +169,7 @@ pub fn assert_rel_ref_literal(input: TokenStream) -> TokenStream {
     gen.into()
 }
 
-#[proc_macro_hack]
+#[proc_macro]
 pub fn assert_uri_ref_literal(input: TokenStream) -> TokenStream {
     let uri_str = string_literal_from_token_stream(input);
 
@@ -191,21 +190,21 @@ mod test {
     use super::*;
 
     fn check_uri_str(uri_str: &str) -> Result<(), Error> {
-        if let Some(_) = UnescapeUri::new(uri_str).first_error() {
+        if UnescapeUri::new(uri_str).first_error().is_some() {
             return Err(Error::EncodingError);
         }
         assert_uri_str(uri_str)
     }
 
     fn check_rel_ref_str(uri_str: &str) -> Result<(), Error> {
-        if let Some(_) = UnescapeUri::new(uri_str).first_error() {
+        if UnescapeUri::new(uri_str).first_error().is_some() {
             return Err(Error::EncodingError);
         }
         assert_rel_ref_str(uri_str)
     }
 
     fn check_uri_ref_str(uri_str: &str) -> Result<(), Error> {
-        if let Some(_) = UnescapeUri::new(uri_str).first_error() {
+        if UnescapeUri::new(uri_str).first_error().is_some() {
             return Err(Error::EncodingError);
         }
         assert_uri_ref_str(uri_str)

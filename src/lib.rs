@@ -208,6 +208,9 @@ pub use uri_unescape_buf::UriUnescapeBuf;
 mod regexes;
 pub(crate) use regexes::*;
 
+#[cfg(feature = "serde")]
+mod serde_support;
+
 #[cfg(test)]
 mod test;
 
@@ -229,24 +232,19 @@ pub type UriRefCow<'a> = Cow<'a, UriRef>;
 #[cfg(feature = "alloc")]
 pub type RelRefCow<'a> = Cow<'a, RelRef>;
 
-use proc_macro_hack::proc_macro_hack;
-
 /// Used by the `uri` macro to verify correctness at compile-time.
 #[doc(hidden)]
-#[proc_macro_hack]
 pub use lwuri_macros::assert_uri_literal;
 
 /// Used by the `uri_ref` macro to verify correctness at compile-time.
 #[doc(hidden)]
-#[proc_macro_hack]
 pub use lwuri_macros::assert_uri_ref_literal;
 
 /// Used by the `rel_ref` macro to verify correctness at compile-time.
 #[doc(hidden)]
-#[proc_macro_hack]
 pub use lwuri_macros::assert_rel_ref_literal;
 
-#[doc(hidden)]
+/// Convenience re-exports for common types and traits.
 pub mod prelude {
     pub use super::escape::StrExt;
     pub use super::UriRawComponents;
@@ -254,7 +252,7 @@ pub mod prelude {
     pub use super::{AnyUriRef, AnyUriRefExt};
     pub use super::{RelRef, Uri, UriRef};
 
-    pub use {assert_rel_ref_literal, assert_uri_literal, assert_uri_ref_literal};
+    pub use super::{assert_rel_ref_literal, assert_uri_literal, assert_uri_ref_literal};
 
     #[cfg(feature = "alloc")]
     pub use super::{RelRefBuf, UriBuf, UriRefBuf};

@@ -14,7 +14,9 @@
 //
 
 use super::*;
+use core::convert::TryFrom;
 use core::ops::Deref;
+use core::str::FromStr;
 
 use alloc::string::{String, ToString};
 
@@ -37,6 +39,38 @@ use alloc::string::{String, ToString};
 pub struct RelRefBuf(pub(super) UriRefBuf);
 
 impl_uri_buf_traits!(RelRefBuf, RelRef);
+
+impl FromStr for RelRefBuf {
+    type Err = ParseError;
+
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        Self::from_str(input)
+    }
+}
+
+impl TryFrom<&str> for RelRefBuf {
+    type Error = ParseError;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        Self::from_str(value)
+    }
+}
+
+impl TryFrom<String> for RelRefBuf {
+    type Error = ParseError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        Self::from_string(value)
+    }
+}
+
+impl<'a> TryFrom<&'a String> for RelRefBuf {
+    type Error = <Self as TryFrom<&'a str>>::Error;
+
+    fn try_from(value: &'a String) -> Result<Self, Self::Error> {
+        <Self as TryFrom<&'a str>>::try_from(value.as_str())
+    }
+}
 
 impl Default for RelRefBuf {
     fn default() -> Self {
